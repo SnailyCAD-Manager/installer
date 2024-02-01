@@ -1,6 +1,6 @@
 {
     "name": "create-snailycad-manager",
-    "version": "1.0.3",
+    "version": "1.0.4-beta.5",
     "description": "",
     "type": "module",
     "main": "dist/index.js",
@@ -19,6 +19,7 @@
         "typescript": "^5.3.3"
     },
     "dependencies": {
+        "axios": "^1.6.7",
         "chalk": "^5.3.0",
         "copy": "^0.3.2",
         "ora": "^8.0.1"

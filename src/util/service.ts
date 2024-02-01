@@ -1,16 +1,19 @@
-export const service = `
-Description=SnailyCAD Manager Service
+import GetInstallationDirectory from "./directory";
 
-Wants=network.target
-After=syslog.target network-online.target
+export const service = `
+[Unit]
+Description=SnailyCAD Auto Start Service
 
 [Service]
 Type=simple
-ExecStart=scm start
-Restart=on-failure
-RestartSec=10
-KillMode=process
+ExecStart=/bin/bash ${GetInstallationDirectory()}/start.sh
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
+`;
+
+export const start = `
+#!/bin/bash
+cd ${GetInstallationDirectory()}
+pnpm start
 `;

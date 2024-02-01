@@ -4,44 +4,33 @@ import ora from "ora";
 import chalk from "chalk";
 import GetInstallationDirectory from "./util/directory";
 import { spawn } from "child_process";
-import { promises as fs, existsSync } from "fs";
-import { service } from "./util/service";
+import { promises as fs, existsSync, createWriteStream } from "fs";
+import axios from "axios";
+import { service, start } from "./util/service";
 
 const installationDirectory = GetInstallationDirectory();
 
+console.log(
+    chalk.greenBright(`Installation directory: ${installationDirectory}`)
+);
+
 async function downloadFiles() {
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<void>(async (resolve, reject) => {
         const spinner = ora("Downloading files...").start();
 
-        const download = spawn(
-            "curl",
-            [
-                "https://github.com/SnailyCAD-Manager/v3/releases/latest/download/linux.tar.gz",
-                "-o",
-                "linux.tar.gz",
-            ],
-            {
-                cwd: installationDirectory,
-            }
+        const download = await axios({
+            url: "https://github.com/SnailyCAD-Manager/v3/releases/latest/download/linux.tar.gz",
+            method: "GET",
+            responseType: "stream",
+        });
+
+        download.data.pipe(
+            createWriteStream(`${installationDirectory}/linux.tar.gz`)
         );
 
-        download.stdout.on("data", (data) => {
-            console.log(data.toString());
-        });
-
-        download.stderr.on("data", (data) => {
-            console.log(data.toString());
-        });
-
-        download.on("close", (code) => {
-            if (code === 0) {
-                spinner.succeed("Downloaded files.");
-                resolve();
-            } else {
-                spinner.fail("Failed to download files.");
-                reject();
-                process.exit(1);
-            }
+        download.data.on("end", () => {
+            spinner.succeed("Downloaded files.");
+            resolve();
         });
     });
 }
@@ -84,11 +73,11 @@ async function installDependencies() {
         });
 
         install.stdout.on("data", (data) => {
-            console.log(data.toString());
+            spinner.text = `Installing dependencies: ${data.toString()}`;
         });
 
         install.stderr.on("data", (data) => {
-            console.log(data.toString());
+            spinner.text = `Installing dependencies: ${data.toString()}`;
         });
 
         install.on("close", (code) => {
@@ -101,6 +90,30 @@ async function installDependencies() {
                 process.exit(1);
             }
         });
+    });
+}
+
+async function createStartScript() {
+    return new Promise<void>((resolve, reject) => {
+        const spinner = ora("Creating start script...").start();
+        // Needs execution permissions
+        fs.writeFile(`${installationDirectory}/start.sh`, start, {
+            encoding: "utf-8",
+            flag: "w",
+        })
+            .then(() => {
+                spinner.succeed("Created start script.");
+                resolve();
+            })
+            .catch(() => {
+                spinner.fail("Failed to create start script.");
+                reject();
+                process.exit(1);
+            });
+
+        spawn("chmod", ["+x", "start.sh"], { cwd: installationDirectory });
+
+        spinner.succeed("Created start script.");
     });
 }
 
@@ -191,6 +204,7 @@ async function main() {
     await downloadFiles();
     await extractFiles();
     await installDependencies();
+    await createStartScript();
     await createService();
     await reloadServices();
     await enableService();
