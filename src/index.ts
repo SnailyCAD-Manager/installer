@@ -93,6 +93,25 @@ async function installDependencies() {
     });
 }
 
+async function openFirewall() {
+    return new Promise<void>((resolve, reject) => {
+        const spinner = ora("Opening firewall...").start();
+
+        const open = spawn("ufw", ["allow", "60120"]);
+
+        open.on("close", (code) => {
+            if (code === 0) {
+                spinner.succeed("Opened firewall.");
+                resolve();
+            } else {
+                spinner.fail("Failed to open firewall.");
+                reject();
+                process.exit(1);
+            }
+        });
+    });
+}
+
 async function createStartScript() {
     return new Promise<void>((resolve, reject) => {
         const spinner = ora("Creating start script...").start();
@@ -204,17 +223,46 @@ async function main() {
     await downloadFiles();
     await extractFiles();
     await installDependencies();
+    await openFirewall();
     await createStartScript();
     await createService();
     await reloadServices();
     await enableService();
     await startService();
 
+    console.clear();
+
     console.log(
         chalk.greenBright(
             "SnailyCAD Manager has been successfully installed on your system."
         )
     );
+
+    console.log("");
+
+    // INFO
+    console.log(chalk.blueBright("INFORMATION:"));
+    console.log(
+        "SnailyCAD Manager has been installed as a service. This means, it will automatically start when your system boots up."
+    );
+    console.log(
+        "SnailyCAD is available on port 60120. You can access it by visiting http://public-ip:60120 (replace public-ip with your server's public IP address) in your web browser."
+    );
+    console.log(
+        "You can manage the SnailyCAD Manager service by using the following commands:"
+    );
+    console.log(chalk.gray("systemctl start snailycad-manager"));
+    console.log(chalk.gray("systemctl stop snailycad-manager"));
+    console.log(chalk.gray("systemctl restart snailycad-manager"));
+    console.log(chalk.gray("systemctl status snailycad-manager"));
+    console.log(
+        chalk.yellowBright(
+            "WARNING: You must run these commands as root. If you are not root, use sudo -i to become root."
+        )
+    );
+    console.log("");
+
+    console.log(chalk.greenBright("Thank you for using SnailyCAD Manager!"));
 }
 
 main();
