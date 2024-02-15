@@ -198,7 +198,7 @@ async function startService() {
     return new Promise<void>((resolve, reject) => {
         const spinner = ora("Starting service...").start();
 
-        const start = spawn("systemctl", ["start", "snailycad-manager"]);
+        const start = spawn("systemctl", ["restart", "snailycad-manager"]);
 
         start.on("close", (code) => {
             if (code === 0) {
@@ -245,8 +245,9 @@ async function main() {
     console.log(
         "SnailyCAD Manager has been installed as a service. This means, it will automatically start when your system boots up."
     );
+    console.log(chalk.magentaBright("SnailyCAD is available on port 60120."));
     console.log(
-        "SnailyCAD is available on port 60120. You can access it by visiting http://public-ip:60120 (replace public-ip with your server's public IP address) in your web browser."
+        "You can access it by visiting http://public-ip:60120 (replace public-ip with your server's public IP address) in your web browser."
     );
     console.log(
         "You can manage the SnailyCAD Manager service by using the following commands:"
