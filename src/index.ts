@@ -93,6 +93,25 @@ async function installDependencies() {
     });
 }
 
+async function linkCLI() {
+    return new Promise<void>((resolve, reject) => {
+        const spinner = ora("Linking CLI...").start();
+
+        const link = spawn("npm", ["link"], { cwd: installationDirectory });
+
+        link.on("close", (code) => {
+            if (code === 0) {
+                spinner.succeed("Linked CLI.");
+                resolve();
+            } else {
+                spinner.fail("Failed to link CLI.");
+                reject();
+                process.exit(1);
+            }
+        });
+    });
+}
+
 async function openFirewall() {
     return new Promise<void>((resolve, reject) => {
         const spinner = ora("Opening firewall...").start();
@@ -223,6 +242,7 @@ async function main() {
     await downloadFiles();
     await extractFiles();
     await installDependencies();
+    await linkCLI();
     await openFirewall();
     await createStartScript();
     await createService();
@@ -261,7 +281,21 @@ async function main() {
             "WARNING: You must run these commands as root. If you are not root, use sudo -i to become root."
         )
     );
-    console.log("");
+    console.log();
+
+    console.log(chalk.blueBright("CLI:"));
+    console.log(
+        "You can use the SnailyCAD Manager CLI to manage your SnailyCAD installation."
+    );
+    console.log(
+        "You can use the following commands to manage your SnailyCAD installation:"
+    );
+    console.log(chalk.gray("scm <command> [options]"));
+    console.log(
+        `Use ${chalk.gray("scm --help")} to get a list of available commands.`
+    );
+
+    console.log();
 
     console.log(chalk.greenBright("Thank you for using SnailyCAD Manager!"));
 }
